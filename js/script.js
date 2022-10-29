@@ -1,54 +1,140 @@
 const btns = document.querySelectorAll('.btn');
 const display = document.getElementById('displayField');
 const buttons = document.getElementById('buttons');
-let equation;
 let expression = '';
+let currentExpression = '';
 let expressionArray = '';
 let arr = [];
 let arr1 = [];
+let arr2 = [];
 let sum = 0;
 const btnEqual = document.getElementById('equal');
 display.value = expression;
-const operands = ["+", '-', '*', '/', '^', '!'];
-const validInput = ['(', ')', '^', '=', '.'];
+const operands = ["+", '-', '*', '/'];
+const operandsHigh = ['^', '!']
 const parentheseRegex = /\(([^()]*)\)/
-const numRegex = /^\D*(\d+(?:\.\d+)?)/gm
 btns.forEach(btn => btn.addEventListener('click', function () { addInput(event.target.value) }));
 btnEqual.addEventListener('click', function() { equal() });
 document.addEventListener("keydown", function() { addInput(event.key) })
 
 function addInput(value) {
     if (value === 'c' || value === 'C') {
-        expression = '';
-        display.value = expression;
-        arr = [];
-        arr1 = [];
-        return;
-    } else if (value ==='Enter') {
+        arr2 = [];
+        currentExpression = '';
+    } else if (value === 'Enter') {
         equal();
         return;
     } else if (value === 'Backspace') {
-        expression = expression.replace(/.$/,'');
-        display.value = expression;
-    } else if (expression.length === 0 && (!isNaN(value) || value === '(')) {
-        expression += value;
-        display.value = expression;
-        return;
-    } else if (expression.length === 0 && (isNaN(value) || value != '(')) {
-        console.log('Invalid expression');
-        return;
-    } else if (operands.includes(value) && operands.includes(expression.charAt(expression.length - 1))) {
-        expression = expression.replace(/.$/,value);
-        display.value = expression;
-    } else if (!isNaN(expression.charAt(expression.length - 1)) && value === '(') {
-        expression += '*';
-        expression += value;
-        display.value = expression;
-    } else if (!isNaN(value) || validInput.includes(value) || operands.includes(value)) {
-        expression += value;
+        if (currentExpression.length === 1 && arr2.length > 0) {
+            currentExpression = arr2[arr2.length - 1];
+            arr2.pop();
+        } else if (currentExpression.length === 1) {
+            currentExpression = '';
+        } else {
+            currentExpression = currentExpression.replace(/.$/,'');
+        }    
+    } else if (currentExpression === '' && arr2.length === 0) {
+        if (!isNaN(value)) {
+            currentExpression = value;
+        } else if (value === '(') {
+            currentExpression = value;
+        } else if (value === '.') {
+            currentExpression = '0' + value;
+        } else {
+            return;
+        }
+    } else if (!isNaN(value)) { // numbers
+        if (!isNaN(currentExpression)) {
+            console.log(currentExpression);
+            currentExpression = currentExpression + value;
+        } else if (currentExpression === ')') {
+            arr2.push(currentExpression);
+            arr2.push('*');
+            currentExpression = value;
+        } else if (operands.includes(currentExpression) || currentExpression === '(' || currentExpression === '^') {
+            arr2.push(currentExpression);
+            currentExpression = value;
+        } else if (currentExpression === '!') {
+            arr2.push(currentExpression);
+            arr2.push('*');
+            currentExpression = value;
+        }
+    } else if (value === '.') { // decimal
+        if (currentExpression.includes('.')) {
+            return;
+        } else if (currentExpression === '') {
+            currentExpression = '0.'
+        } else if (operands.includes(currentExpression) || currentExpression === '(') {
+            arr2.push(currentExpression);
+            currentExpression = '0.'
+        } else if (currentExpression === ')' || operandsHigh.includes(currentExpression)) {
+            arr2.push(currentExpression);
+            arr2.push ('*');
+            currentExpression = '0.'
+        } else if (!isNaN(currentExpression)) {
+            currentExpression = currentExpression + value;
+        } 
+    } else if (operands.includes(value)) { // operands
+        if (operands.includes(currentExpression)) {
+            currentExpression = value;
+        } else if (!isNaN(currentExpression) || currentExpression === ')') {
+            arr2.push(currentExpression);
+            currentExpression = value;
+        } 
+    } else if (value === '(') {     // open parentheses
+        if (!isNaN(currentExpression) || operandsHigh.includes(currentExpression) || currentExpression === ')') {
+            arr2.push(currentExpression);
+            arr2.push('*');
+            currentExpression = value;
+
+        } else if (operands.includes(currentExpression) || currentExpression === '(') {
+            arr2.push(currentExpression);
+            currentExpression = value;
+        }
+    } else if (value === ')') {     // close parentheses
+        if (currentExpression === '^') {
+            arr2.push('^');
+            currentExpression = ')';
+        } else if (operands.includes(currentExpression)) {
+            return;
+        } else if (!isNaN(currentExpression)) {
+            arr2.push(currentExpression);
+            currentExpression = value;
+        }
+    } else if (operandsHigh.includes(value)) { // high operands
+        if (!isNaN(currentExpression) || currentExpression === ')') {
+            arr2.push(currentExpression);
+            currentExpression = value;
+        } else {
+            return;
+        }
+        } else if (value === 'neg') {       // negative
+            if (currentExpression === '') {
+                arr2.push('(');
+                currentExpression = '-'
+            } else if (arr2[arr2.length - 1] === '-' && arr2[arr2.length - 2] === '(') {
+                console.log('pop one')
+                arr2.pop();
+                arr2.pop();
+            } else if (arr2[arr2.length - 1] === '-') {
+                console.log('pop both')
+                arr2.pop();
+            } else if (!isNaN(currentExpression)) {
+                arr2.push('(');
+                arr2.push('-');
+            } else if (operands.includes(currentExpression)) {
+                arr2.push(currentExpression);
+                arr2.push('(');
+                currentExpression = '-';
+            }
+        }
+        if (currentExpression === '' & arr2.length > 0) {
+            currentExpression = arr2[length - 1];
+            arr2.pop();
+        }
+        expression = arr2.join('') + currentExpression;
         display.value = expression;
     }
-}
 
 function equal() {
     while ((expression.match(/\(/g) || []).length != (expression.match(/\)/g) || []).length) {
@@ -64,6 +150,7 @@ function equal() {
         let newValue = evalExpression(arr1[1]);
         expression = expression.replace(arr1[0], newValue);
     }
+    console.log('equal ' + expression)
     expressionToArray(expression);
     let sum = evalExpression(expression);
     if (sum === undefined || sum === null) {
@@ -72,19 +159,34 @@ function equal() {
         expression = '';
     } else {
         display.value = sum;
-        expression = sum;
+        if (sum != 0){
+            currentExpression = sum;
+        } else {
+            currentExpression = '';
+        }
         sum = 0;
         arr = [];
+        arr2 = [];
+        if (currentExpression.includes('-')) {
+            arr2.push('-')
+            currentExpression = currentExpression.substring(1);
+        }
     }
 }
 
 function evalExpression(expressionToEval) {
     let sum = 0;
-    while (expressionToEval.includes('^')) {
+    let count = 0;
+    while (expressionToEval.includes('^') && count < 5) {
         let indexE = arr.indexOf('^');
+        console.log('indexE: ' + indexE)
+        console.log('expressionToEval: ' + expressionToEval)
         sum = exponent(arr[indexE - 1], arr[indexE + 1])
         arr.splice(indexE - 1, 3, sum)
         expressionToEval = arr.join('');
+        console.log('expressionToEval: ' + expressionToEval);
+        console.log('arr: ' + arr);
+        count++;
     }
     while (expressionToEval.includes('!')) {
         let indexF = arr.indexOf('!');
@@ -143,10 +245,10 @@ function expressionToArray (expressionArray) {
             string += expressionArray[i];
         } else if ((expressionArray[i] === '-' && i === 0) || (expressionArray[i] === '-' && operands.includes(expressionArray[i - 1]))){
             string += expressionArray[i];
-        } else if (operands.includes(expressionArray[i])) {
+        } else if (operands.includes(expressionArray[i]) || operandsHigh.includes(expressionArray[i])) {
             arr.push(expressionArray[i]);
         }
-        if ((operands.includes(expressionArray[i + 1]) && string != '') || (i === expressionArray.length - 1 && string != '')) {
+        if (((operands.includes(expressionArray[i + 1]) || operandsHigh.includes(expressionArray[i + 1])) && string != '') || (i === expressionArray.length - 1 && string != '')) {
             if (isInt(string)) {
                 arr.push(parseInt(string))
                 string = '';
@@ -156,6 +258,7 @@ function expressionToArray (expressionArray) {
             }
         }
     }
+    console.log('expressionToArray (arr): ' + arr)
 }
 
 function isInt(n) {
