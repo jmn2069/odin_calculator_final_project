@@ -8,14 +8,39 @@ let arr = [];
 let arr1 = [];
 let arr2 = [];
 let sum = 0;
-const btnEqual = document.getElementById('equal');
+const btnEqual = document.getElementById('=');
 display.value = expression;
 const operands = ["+", '-', '*', '/'];
 const operandsHigh = ['^', '!']
-const parentheseRegex = /\(([^()]*)\)/
+const parentheseRegex = /\(([^()]*)\)/;
 btns.forEach(btn => btn.addEventListener('click', function () { addInput(event.target.value) }));
 btnEqual.addEventListener('click', function() { equal() });
-document.addEventListener("keydown", function() { addInput(event.key) })
+document.addEventListener("keydown", function() { addInput(event.key) });
+document.addEventListener("keydown", function() { changeClass(event.key) });
+
+function changeClass(value) {
+    document.getElementById(value).classList.add('pressed');
+    setTimeout(function(){
+        document.getElementById(value).classList.remove('pressed');
+    }, 1000);
+    setTimeout(function(){
+        document.getElementById(value).classList.add('press');
+    }, 250);
+    setTimeout(function(){
+        document.getElementById(value).classList.remove('press');
+    }, 500);
+}
+
+function alert(msg, duration)
+{
+ var el = document.createElement("div");
+ el.setAttribute("style","padding:1em;top:40%;left:20%;");
+ el.innerHTML = msg;
+ setTimeout(function(){
+  el.parentNode.removeChild(el);
+ },duration);
+ document.body.appendChild(el);
+}
 
 function addInput(value) {
     if (value === 'c' || value === 'C') {
@@ -41,11 +66,11 @@ function addInput(value) {
         } else if (value === '.') {
             currentExpression = '0' + value;
         } else {
+            alert('Invalid format used', 1000)
             return;
         }
     } else if (!isNaN(value)) { // numbers
         if (!isNaN(currentExpression)) {
-            console.log(currentExpression);
             currentExpression = currentExpression + value;
         } else if (currentExpression === ')') {
             arr2.push(currentExpression);
@@ -113,11 +138,9 @@ function addInput(value) {
                 arr2.push('(');
                 currentExpression = '-'
             } else if (arr2[arr2.length - 1] === '-' && arr2[arr2.length - 2] === '(') {
-                console.log('pop one')
                 arr2.pop();
                 arr2.pop();
             } else if (arr2[arr2.length - 1] === '-') {
-                console.log('pop both')
                 arr2.pop();
             } else if (!isNaN(currentExpression)) {
                 arr2.push('(');
@@ -150,13 +173,14 @@ function equal() {
         let newValue = evalExpression(arr1[1]);
         expression = expression.replace(arr1[0], newValue);
     }
-    console.log('equal ' + expression)
     expressionToArray(expression);
     let sum = evalExpression(expression);
     if (sum === undefined || sum === null) {
         display.value = 'Invalid expression';
+        arr2 = [];
         arr = [];
         expression = '';
+        currentExpression = '';
     } else {
         display.value = sum;
         if (sum != 0){
@@ -179,13 +203,9 @@ function evalExpression(expressionToEval) {
     let count = 0;
     while (expressionToEval.includes('^') && count < 5) {
         let indexE = arr.indexOf('^');
-        console.log('indexE: ' + indexE)
-        console.log('expressionToEval: ' + expressionToEval)
         sum = exponent(arr[indexE - 1], arr[indexE + 1])
         arr.splice(indexE - 1, 3, sum)
         expressionToEval = arr.join('');
-        console.log('expressionToEval: ' + expressionToEval);
-        console.log('arr: ' + arr);
         count++;
     }
     while (expressionToEval.includes('!')) {
@@ -258,7 +278,6 @@ function expressionToArray (expressionArray) {
             }
         }
     }
-    console.log('expressionToArray (arr): ' + arr)
 }
 
 function isInt(n) {
@@ -278,6 +297,10 @@ function multiply(a, b) {
 }
 
 function divide(a, b) {
+    if (b === 0) {
+        alert("You don't divide by 0... C'mon...", 2000)
+        return 0;
+    }
     return a / b;
 }
 
